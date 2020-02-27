@@ -100,6 +100,12 @@ export default class SharedAncestor extends React.Component<{}> {
     }
 }
 
+function getAncestorInfos(ancestors: Array<number>, person: number) {
+    return ancestors.map(a => {
+        return {ancestor: a, person: person};
+    });
+}
+
 function sharedAncestor(pairs: Array<Array<number>>, person1: number, person2: number) {
     let ancestors = {};
     pairs.forEach(pair => {
@@ -113,24 +119,23 @@ function sharedAncestor(pairs: Array<Array<number>>, person1: number, person2: n
     if (!ancestors[person2] || ancestors[person2].length == 0)
         return 'null';
 
-    let currentAncestors = [];
-    for (let i = 0; i < Math.max(ancestors[person1].length, ancestors[person2].length); i++) {
-        if (ancestors[person1][i])
-            currentAncestors.push(ancestors[person1][i]);
-        if (ancestors[person2][i])
-            currentAncestors.push(ancestors[person2][i]);
-    }
+    const person1AncestorInfos = getAncestorInfos(ancestors[person1], 1);
+    const person2AncestorInfos = getAncestorInfos(ancestors[person2], 2);
+    let currentAncestorInfos = [].concat(person1AncestorInfos, person2AncestorInfos);
 
     let viewedAncestors = {};
     do {
-        let currentAncestor = currentAncestors.pop();
-        if (viewedAncestors[currentAncestor])
-            return currentAncestor;
-        viewedAncestors[currentAncestor] = true;
+        let ancestorInfo = currentAncestorInfos.pop();
+        const ancestor = ancestorInfo.ancestor;
+        const viewedAncestor = viewedAncestors[ancestor];
+        if (viewedAncestor && viewedAncestor.person != ancestorInfo.person) {
+            return ancestor;
+        }
+        viewedAncestors[ancestor] = ancestorInfo;
 
-        if (ancestors[currentAncestor])
-            currentAncestors.push(...ancestors[currentAncestor]);
-    } while (currentAncestors.length != 0);
+        if (ancestors[ancestor])
+            currentAncestorInfos.push(...getAncestorInfos(ancestors[ancestor], ancestorInfo.person));
+    } while (currentAncestorInfos.length != 0);
 
     return 'null';
 }
